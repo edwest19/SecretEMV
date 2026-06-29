@@ -36,36 +36,17 @@ jobs:
           --output ./publish/win-x64 `
           -p:PublishSingleFile=true `
           -p:IncludeNativeLibrariesForSelfExtract=true `
-          -p:EnableCompressionInSingleFile=true
-    
-    - name: Publish Windows ARM64 (Self-Contained)
-      run: |
-        dotnet publish SecretEmv.GenAC/SecretEmv.GenAC.csproj `
-          --configuration Release `
-          --runtime win-arm64 `
-          --self-contained true `
-          --output ./publish/win-arm64 `
-          -p:PublishSingleFile=true `
-          -p:IncludeNativeLibrariesForSelfExtract=true `
-          -p:EnableCompressionInSingleFile=true
+          -p:EnableCompressionInSingleFile=true `
+          -p:PublishReadyToRun=false
     
     - name: Create Windows x64 ZIP
       run: Compress-Archive -Path ./publish/win-x64/* -DestinationPath ./SecretEMV-win-x64.zip
-    
-    - name: Create Windows ARM64 ZIP
-      run: Compress-Archive -Path ./publish/win-arm64/* -DestinationPath ./SecretEMV-win-arm64.zip
     
     - name: Upload Windows x64 Artifact
       uses: actions/upload-artifact@v4
       with:
         name: SecretEMV-win-x64
         path: ./SecretEMV-win-x64.zip
-    
-    - name: Upload Windows ARM64 Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: SecretEMV-win-arm64
-        path: ./SecretEMV-win-arm64.zip
     
     # Create GitHub Release on version tags
     - name: Create Release
@@ -74,7 +55,6 @@ jobs:
       with:
         files: |
           ./SecretEMV-win-x64.zip
-          ./SecretEMV-win-arm64.zip
         draft: false
         prerelease: false
       env:
