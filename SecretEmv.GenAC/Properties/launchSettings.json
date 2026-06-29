@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "SecretEmv.GenAC (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "SecretEmv.GenAC (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

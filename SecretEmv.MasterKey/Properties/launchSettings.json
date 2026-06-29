@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "SecretEmv.MasterKey": {
+      "commandName": "Project",
+      "commandLineArgs": "404142434445464748494A4B4C4D4E4F 5413330089010000 01\r\n"
+    }
+  }
+}
