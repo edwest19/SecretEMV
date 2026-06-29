@@ -33,6 +33,7 @@ jobs:
           -o ./publish/win-x64 `
           /p:PublishProfile= `
           /p:Platform=x64 `
+          /p:WindowsPackageType=None `
           /p:PublishSingleFile=true `
           /p:PublishReadyToRun=false `
           /p:PublishTrimmed=false
