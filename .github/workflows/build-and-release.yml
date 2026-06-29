@@ -9,6 +9,10 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+# Add permissions for the workflow
+permissions:
+  contents: write
+
 jobs:
   build-x64:
     runs-on: windows-latest
@@ -49,8 +53,10 @@ jobs:
     
     - name: Create Release
       if: startsWith(github.ref, 'refs/tags/v')
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         files: ./SecretEMV-win-x64.zip
+        draft: false
+        prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
