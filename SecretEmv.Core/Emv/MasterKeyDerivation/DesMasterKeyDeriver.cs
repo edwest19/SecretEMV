@@ -26,7 +26,7 @@ namespace SecretEmv.Core.Emv.MasterKeyDerivation
         /// <param name="issuerMasterKey">The issuer master key (IMK).</param>
         /// <param name="pan">Primary Account Number (PAN).</param>
         /// <param name="sequenceNumber">Card sequence number (CSN).</param>
-        /// <returns>Derived ICC Master Key.</returns>
+        /// <returns>Derived ICC Master Key (16 bytes for 3DES).</returns>
         public byte[] DeriveOptionA(byte[] imk, string pan, string psn)
         {
             if (imk == null || imk.Length != 16)
@@ -47,9 +47,22 @@ namespace SecretEmv.Core.Emv.MasterKeyDerivation
             if (diversificationData.Length != 8)
                 throw new Exception("Diversification data must be exactly 8 bytes.");
 
-            // 3. MK-AC = 3DES(IMK-AC, PAN16)
+            // 3. Derive left half: K1 = 3DES(IMK-AC, PAN16)
             var tdes = new TripleDesEngine();
-            byte[] mkac = tdes.EncryptBlock(imk, diversificationData);
+            byte[] k1 = tdes.EncryptBlock(imk, diversificationData);
+
+            // 4. Derive right half: K2 = 3DES(IMK-AC, ~PAN16)
+            byte[] invertedData = new byte[8];
+            for (int i = 0; i < 8; i++)
+            {
+                invertedData[i] = (byte)~diversificationData[i];
+            }
+            byte[] k2 = tdes.EncryptBlock(imk, invertedData);
+
+            // 5. Concatenate K1 and K2 to form 16-byte master key
+            byte[] mkac = new byte[16];
+            Array.Copy(k1, 0, mkac, 0, 8);
+            Array.Copy(k2, 0, mkac, 8, 8);
 
             return mkac;
         }
@@ -60,7 +73,7 @@ namespace SecretEmv.Core.Emv.MasterKeyDerivation
         /// <param name="issuerMasterKey">The issuer master key (IMK).</param>
         /// <param name="pan">Primary Account Number (PAN).</param>
         /// <param name="sequenceNumber">Card sequence number (CSN).</param>
-        /// <returns>Derived ICC Master Key.</returns>
+        /// <returns>Derived ICC Master Key (16 bytes for 3DES).</returns>
         public byte[] DeriveOptionB(byte[] issuerMasterKey, string pan, string sequenceNumber)
         {
             if (issuerMasterKey == null || issuerMasterKey.Length != 16)
@@ -102,8 +115,21 @@ namespace SecretEmv.Core.Emv.MasterKeyDerivation
             byte[] k1Modified = (byte[])k1.Clone();
             k1Modified[k1Modified.Length - 1] ^= paddedNibble;
 
-            // 6. Second 3DES encryption: MK_AC = 3DES(IMK, K1Modified)
-            byte[] mkac = tdes.EncryptBlock(issuerMasterKey, k1Modified);
+            // 6. Derive left half: use modified K1 as data
+            byte[] leftHalf = tdes.EncryptBlock(issuerMasterKey, k1Modified);
+
+            // 7. Derive right half: invert k1Modified and encrypt
+            byte[] k1Inverted = new byte[8];
+            for (int i = 0; i < 8; i++)
+            {
+                k1Inverted[i] = (byte)~k1Modified[i];
+            }
+            byte[] rightHalf = tdes.EncryptBlock(issuerMasterKey, k1Inverted);
+
+            // 8. Concatenate to form 16-byte master key
+            byte[] mkac = new byte[16];
+            Array.Copy(leftHalf, 0, mkac, 0, 8);
+            Array.Copy(rightHalf, 0, mkac, 8, 8);
 
             return mkac;
         }
