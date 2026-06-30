@@ -398,3 +398,4 @@ secrets.json
 *.secrets
 .env
 .env.local
+/test-build
