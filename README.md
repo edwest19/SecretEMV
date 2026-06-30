@@ -11,6 +11,7 @@ A complete EMV cryptographic engine for Windows (.NET 10 / WinUI 3), implementin
 
 SecretEmv is designed as a modular, deterministic, transparent EMV cryptography toolkit.  
 It is **not** a payment application — it is a **developer tool** for understanding EMV cryptographic flows.
+The idea for this project is for Copilot to generate the entire solution, including all EMV flows, based on the EMV cryptographic summary provided in this README.md and the ppublic EMV specifications.
 
 ---
 
@@ -70,6 +71,9 @@ SecretEmv/
 ├── SecretEmv.App/            ← WinUI 3 application
 │
 └── SecretEmv.MasterKey/      ← CLI tool for MK derivation
+└── SecretEmv.SKD/            ← CLI tool for SKD derivation
+└── SecretEmv.Arqc/      ← CLI tool for ARQC/ARPC derivation
+
 ```
 
 ---
@@ -256,13 +260,7 @@ When Copilot Agent is invoked:
 
 # 📄 License
 
-Choose one:
-
 - MIT  
-- Apache 2.0  
-- BSD 3‑Clause  
-
-(If you want, I can generate the LICENSE file.)
 
 ---
 
@@ -277,17 +275,4 @@ This README.md acts as:
 - Architecture guide  
 - Project specification  
 
-Paste this file into your repo root as `README.md`.
-
 ---
-
-If you want, I can also generate:
-
-- `LICENSE`  
-- `SecretEmv.Emvco-Spec-Summary.md`  
-- `SecretEmv-Prompt.md` (expanded version)  
-- badges  
-- screenshots section  
-- full documentation site  
-
-Just tell me.
