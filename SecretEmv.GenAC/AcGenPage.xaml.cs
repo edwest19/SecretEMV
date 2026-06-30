@@ -97,32 +97,41 @@ namespace SecretEmv.GenAC
         // -----------------------------
         private void GenerateArqc_Click(object sender, RoutedEventArgs e)
         {
-            // Read DOL hex
-            string dolHex = TxtDol.Text.Trim();
+            try
+            {
+                // Read DOL hex
+                string dolHex = TxtDol.Text.Trim();
 
-            // Convert DOL hex to bytes
-            byte[] dolBytes = string.IsNullOrWhiteSpace(dolHex)
-                ? Array.Empty<byte>()
-                : Convert.FromHexString(dolHex);
+                // Convert DOL hex to bytes
+                byte[] dolBytes = string.IsNullOrWhiteSpace(dolHex)
+                    ? Array.Empty<byte>()
+                    : Convert.FromHexString(dolHex);
 
-            // Read tag values hex
-            string tagValuesHex = TxtTagValues.Text.Trim();
+                // Read tag values hex
+                string tagValuesHex = TxtTagValues.Text.Trim();
 
-            // Convert tag values hex to bytes
-            byte[] tagValuesBytes = ParseTagValues(tagValuesHex);
+                // Convert tag values hex to bytes
+                byte[] tagValuesBytes = ParseTagValues(tagValuesHex);
 
-            // Read Session Key SK_AC
-            string sessionKeyHex = TxtSessionKey.Text.Trim();
+                // Read Session Key SK_AC
+                string sessionKeyHex = TxtSessionKey.Text.Trim();
 
-            // Generate ARQC
-            var result = _pipeline.GenerateArqc(
-                sessionKeyHex,
-                dolBytes,
-                tagValuesBytes
-            );
+                // Generate ARQC
+                var result = _pipeline.GenerateArqc(
+                    sessionKeyHex,
+                    dolBytes,
+                    tagValuesBytes
+                );
 
-            // Display ARQC
-            TxtArqc.Text = result.Arqc;
+                // Display ARQC
+                TxtArqc.Text = result.Arqc;
+                AppendLog("ARQC generated.");
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"ERROR (ARQC): {ex.Message}");
+                AppendLog($"Stack: {ex.StackTrace}");
+            }
         }
 
 
@@ -131,28 +140,36 @@ namespace SecretEmv.GenAC
         // -----------------------------
         private void GenerateArpc_Click(object sender, RoutedEventArgs e)
         {
-            // Read ARQC from UI
-            string arqcHex = TxtArqc.Text.Trim();
-
-            // Read ARC from UI (default 3030)
-            string arcHex = TxtArc.Text.Trim();
-
-            // Read Session Key SK_AC
-            string sessionKeyHex = TxtSessionKey.Text.Trim();
-
-            // Build ARPC input model
-            var input = new ArpcInput
+            try
             {
-                Arqc = arqcHex,
-                Arc = arcHex,
-                SessionKeyAc = sessionKeyHex
-            };
+                // Read ARQC from UI
+                string arqcHex = TxtArqc.Text.Trim();
 
-            // Generate ARPC
-            var result = _pipeline.GenerateArpc(input);
+                // Read ARC from UI (default 3030)
+                string arcHex = TxtArc.Text.Trim();
 
-            // Display ARPC
-            TxtArpc.Text = result.Arpc;
+                // Read Session Key SK_AC
+                string sessionKeyHex = TxtSessionKey.Text.Trim();
+
+                // Build ARPC input model
+                var input = new ArpcInput
+                {
+                    Arqc = arqcHex,
+                    Arc = arcHex,
+                    SessionKeyAc = sessionKeyHex
+                };
+
+                // Generate ARPC
+                var result = _pipeline.GenerateArpc(input);
+
+                // Display ARPC
+                TxtArpc.Text = result.Arpc;
+                AppendLog("ARPC generated.");
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"ERROR (ARPC): {ex.Message}");
+            }
         }
 
         private static byte[] ParseTagValues(string hex)

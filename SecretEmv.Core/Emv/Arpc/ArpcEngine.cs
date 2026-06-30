@@ -65,20 +65,31 @@ namespace SecretEmv.Core.Emv.Arpc
             byte[] arc = Convert.FromHexString(arcHex);
             byte[] skac = Convert.FromHexString(sessionKeyHex);
 
-            // EMV ARPC Method 1: ARPC = 3DES(SK_AC, ARQC XOR ARC)
-            byte[] xored = new byte[arqc.Length];
-            for (int i = 0; i < arqc.Length; i++)
-                xored[i] = (byte)(arqc[i] ^ arc[i]);
+            // Validate
+            if (arqc.Length != 8)
+                throw new ArgumentException("ARQC must be 8 bytes.");
+            if (arc.Length != 2)
+                throw new ArgumentException("ARC must be 2 bytes.");
 
+            // EMV ARPC Method 1: ARPC = 3DES(SK_AC, ARQC XOR (ARC || 00 00 00 00 00 00))
+            // Pad ARC to 8 bytes with zeros
+            byte[] arcPadded = new byte[8];
+            Array.Copy(arc, 0, arcPadded, 0, 2);
+            // Remaining 6 bytes are already zero
+
+            // XOR ARQC with padded ARC
+            byte[] xored = new byte[8];
+            for (int i = 0; i < 8; i++)
+                xored[i] = (byte)(arqc[i] ^ arcPadded[i]);
+
+            // Encrypt with session key
             byte[] arpc = _tdes.EncryptBlock(skac, xored);
-
 
             return new ArpcResult
             {
                 Arpc = Convert.ToHexString(arpc)
             };
         }
-
 
         /// <summary>
         /// Generates ARPC using EMV Method 2:
