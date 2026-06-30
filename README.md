@@ -59,16 +59,17 @@ SecretEmv/
 │
 ├── README.md                 ← master prompt (this file)
 ├── LICENSE
-├── SecretEmv.sln
+├── SecretEmv.slnx
 ├── .gitignore
 │
 ├── SecretEmv.Core/           ← EMV crypto engines
 │   ├── Crypto/
 │   ├── Emv/
+│   ├── Logging/
+│   ├── Models/
 │   ├── Primitives/
-│   └── Utilities/
 │
-├── SecretEmv.App/            ← WinUI 3 application
+├── SecretEmv.GenAc/            ← WinUI 3 application
 │
 └── SecretEmv.MasterKey/      ← CLI tool for MK derivation
 └── SecretEmv.SKD/            ← CLI tool for SKD derivation
