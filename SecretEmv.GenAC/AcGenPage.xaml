@@ -54,7 +54,16 @@
             <Expander Header="Card Master Key" IsExpanded="True">
                 <StackPanel Spacing="8">
                     <TextBlock Text="IMK-AC (hex)" />
-                    <TextBox x:Name="TxtImkAc" MaxWidth="600" HorizontalAlignment="Stretch" />
+                    <TextBox x:Name="TxtImkAc" 
+                             MaxWidth="600" 
+                             HorizontalAlignment="Stretch"
+                             TextChanged="ImkAc_TextChanged" />
+
+                    <TextBlock x:Name="TxtImkKcv" 
+                               Text="" 
+                               FontSize="12" 
+                               Foreground="Gray" 
+                               Margin="0,0,0,8"/>
 
                     <StackPanel Orientation="Horizontal" Spacing="16">
                         <StackPanel Width="200">

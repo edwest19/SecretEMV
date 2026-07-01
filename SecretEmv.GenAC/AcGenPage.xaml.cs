@@ -217,10 +217,78 @@ namespace SecretEmv.GenAC
         }
 
         // -----------------------------
+        // KCV Calculation
+        // -----------------------------
+        private void ImkAc_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            CalculateAndDisplayKcv();
+        }
+
+        private void CalculateAndDisplayKcv()
+        {
+            try
+            {
+                string imkHex = TxtImkAc.Text.Trim();
+
+                // Check if valid hex and correct length
+                if (string.IsNullOrWhiteSpace(imkHex))
+                {
+                    TxtImkKcv.Text = "";
+                    return;
+                }
+
+                // Try to parse as hex
+                byte[] imk = Convert.FromHexString(imkHex);
+
+                string kcv;
+                if (Rb3Des.IsChecked == true)
+                {
+                    // 3DES KCV: Encrypt 8 zero bytes, take first 3 bytes
+                    if (imk.Length != 16)
+                    {
+                        TxtImkKcv.Text = "KCV: (IMK must be 16 bytes for 3DES)";
+                        return;
+                    }
+
+                    var tdes = new SecretEmv.Core.Crypto.TripleDesEngine();
+                    byte[] zeros = new byte[8];
+                    byte[] encrypted = tdes.EncryptBlock(imk, zeros);
+                    kcv = Convert.ToHexString(encrypted).Substring(0, 6);
+                }
+                else
+                {
+                    // AES KCV: Encrypt 16 zero bytes, take first 3 bytes
+                    if (imk.Length != 16 && imk.Length != 24 && imk.Length != 32)
+                    {
+                        TxtImkKcv.Text = "KCV: (IMK must be 16, 24, or 32 bytes for AES)";
+                        return;
+                    }
+
+                    var aes = new SecretEmv.Core.Crypto.AesEngine();
+                    byte[] zeros = new byte[16];
+                    byte[] encrypted = aes.EncryptBlock(imk, zeros);
+                    kcv = Convert.ToHexString(encrypted).Substring(0, 6);
+                }
+
+                TxtImkKcv.Text = $"KCV: {kcv}";
+            }
+            catch (Exception)
+            {
+                TxtImkKcv.Text = "KCV: (invalid hex)";
+            }
+        }
+
+        // -----------------------------
         // Block cipher selection
         // -----------------------------
         private void BlockCipher_Checked(object sender, RoutedEventArgs e)
         {
+            // Recalculate KCV when cipher changes
+            if (TxtImkKcv != null)
+            {
+                CalculateAndDisplayKcv();
+            }
+
             if (sender is not RadioButton rbAes)
             {
                 return;
