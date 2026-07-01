@@ -7,13 +7,30 @@ using Microsoft.UI.Xaml.Controls;
 using SecretEmv.Core.Emv;
 using SecretEmv.Core.Models;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace SecretEmv.GenAC
 {
     public sealed partial class AcGenPage : Page
     {
-        private readonly EmvCryptoPipelineService _pipeline = new EmvCryptoPipelineService();
+        // Add this constant at the class level (after line 16, inside the class)
+        private static readonly HashSet<string> AllowedDolTags = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "9F02",  // Amount, Authorised (Numeric)
+        "9F03",  // Amount, Other (Numeric)
+        "9F1A",  // Terminal Country Code
+        "95",    // Terminal Verification Results
+        "5F2A",  // Transaction Currency Code
+        "9A",    // Transaction Date
+        "9C",    // Transaction Type
+        "9F37",  // Unpredictable Number
+        "82",    // Application Interchange Profile
+        "9F36"   // Application Transaction Counter (ATC)
+    };
+
+    private readonly EmvCryptoPipelineService _pipeline = new EmvCryptoPipelineService();
 
         public AcGenPage()
         {
@@ -180,7 +197,155 @@ namespace SecretEmv.GenAC
             return Convert.FromHexString(hex);
         }
 
+    /// <summary>
+    /// Handles DOL text changes - parses TLV format if detected and extracts only allowed tags
+    /// </summary>
+    private void TxtDol_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        try
+        {
+            string input = TxtDol.Text.Trim();
+            if (string.IsNullOrWhiteSpace(input))
+                return;
 
+            byte[] data = Convert.FromHexString(input);
+
+            // Try to parse as TLV and extract values for allowed tags only
+            string extractedValues = ParseTlvWithFilter(data);
+
+            if (!string.IsNullOrEmpty(extractedValues))
+            {
+                // Auto-populate tag values with only the allowed tags
+                TxtTagValues.Text = extractedValues;
+                AppendLog($"TLV data detected - extracted values for standard DOL tags.");
+            }
+        }
+        catch
+        {
+            // Silently fail - user might still be typing
+        }
+    }
+
+    /// <summary>
+    /// Parses TLV data and extracts values only for tags in the allowed DOL list.
+    /// Returns concatenated hex string of values in the order they appear in the TLV.
+    /// </summary>
+    private string ParseTlvWithFilter(byte[] data)
+    {
+        var valueList = new List<byte>();
+        int offset = 0;
+
+        while (offset < data.Length)
+        {
+            // Parse tag
+            byte firstByte = data[offset++];
+
+            var tagBytes = new List<byte> { firstByte };
+
+            // Check if multi-byte tag
+            if ((firstByte & 0x1F) == 0x1F)
+            {
+                while (offset < data.Length && (data[offset] & 0x80) != 0)
+                {
+                    tagBytes.Add(data[offset++]);
+                }
+                if (offset < data.Length)
+                    tagBytes.Add(data[offset++]);
+            }
+
+            string tag = Convert.ToHexString(tagBytes.ToArray());
+
+            if (offset >= data.Length)
+                break;
+
+            // Parse length
+            int length = data[offset++];
+
+            // Check if we have value bytes
+            if (offset + length <= data.Length)
+            {
+                // Only extract if tag is in our allowed list
+                if (AllowedDolTags.Contains(tag))
+                {
+                    for (int i = 0; i < length; i++)
+                    {
+                        valueList.Add(data[offset++]);
+                    }
+                }
+                else
+                {
+                    // Skip this tag's value
+                    offset += length;
+                }
+            }
+            else
+            {
+                // Not enough bytes for value, this is DOL-only format (no values)
+                return string.Empty;
+            }
+        }
+
+        return valueList.Count > 0 ? Convert.ToHexString(valueList.ToArray()) : string.Empty;
+    }
+    /// <summary>
+    /// Parses input as either DOL-only (tags) or TLV (tags with length and values).
+    /// Returns (isDolOnly, extractedTagValues).
+    /// </summary>
+    private (bool isDolOnly, string tagValues) ParseTlvOrDol(string hex)
+        {
+            if (string.IsNullOrWhiteSpace(hex))
+                return (true, string.Empty);
+
+            byte[] data = Convert.FromHexString(hex);
+            var tagValueList = new List<byte>();
+            int offset = 0;
+            bool hasTlvData = false;
+
+            while (offset < data.Length)
+            {
+                // Parse tag
+                int tagStart = offset;
+                byte firstByte = data[offset++];
+
+                // Check if multi-byte tag
+                if ((firstByte & 0x1F) == 0x1F)
+                {
+                    while (offset < data.Length && (data[offset] & 0x80) != 0)
+                        offset++;
+                    if (offset < data.Length)
+                        offset++; // Include the last byte
+                }
+
+                if (offset >= data.Length)
+                    break;
+
+                // Parse length
+                int length = data[offset++];
+
+                // Check if we have value bytes
+                if (offset + length <= data.Length)
+                {
+                    hasTlvData = true;
+                    // Extract the value
+                    for (int i = 0; i < length; i++)
+                    {
+                        tagValueList.Add(data[offset++]);
+                    }
+                }
+                else
+                {
+                    // Not enough bytes for value, this is DOL-only format
+                    return (true, string.Empty);
+                }
+            }
+
+            if (hasTlvData && tagValueList.Count > 0)
+            {
+                return (false, Convert.ToHexString(tagValueList.ToArray()));
+            }
+
+            return (true, string.Empty);
+        }
 
         // -----------------------------
         // Logging helper

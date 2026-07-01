@@ -125,9 +125,11 @@
                     <!-- DOL Input -->
                     <StackPanel Spacing="8">
                         <TextBlock Text="DOL (hex)" />
-                        <TextBox x:Name="TxtDol" MaxWidth="600" HorizontalAlignment="Stretch" />
+                        <TextBox x:Name="TxtDol" 
+                                   MaxWidth="600" 
+                                   HorizontalAlignment="Stretch"
+                                   TextChanged="TxtDol_TextChanged" />
                     </StackPanel>
-
                     <!-- Tag Values Input -->
                     <StackPanel Spacing="8">
                         <TextBlock Text="Tag Values (hex)" />
