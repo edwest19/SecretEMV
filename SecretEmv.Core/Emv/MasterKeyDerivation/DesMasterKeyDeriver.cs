@@ -35,38 +35,43 @@ namespace SecretEmv.Core.Emv.MasterKeyDerivation
             if (string.IsNullOrWhiteSpace(pan))
                 throw new ArgumentNullException(nameof(pan));
 
-            // 1. Take rightmost 16 digits of PAN
-            string pan16 = pan.Length > 16 ? pan.Substring(pan.Length - 16) : pan;
+            if (string.IsNullOrWhiteSpace(psn))
+                throw new ArgumentNullException(nameof(psn));
 
-            if (pan16.Length != 16)
-                throw new ArgumentException("PAN must contain at least 16 digits.");
+            // 1. Take rightmost 14 hex digits (7 bytes) of PAN
+            string pan14 = pan.Length > 14 ? pan.Substring(pan.Length - 14) : pan.PadLeft(14, '0');
 
-            // 2. Diversification block for Option A is ONLY PAN16 (8 bytes)
-            byte[] diversificationData = Convert.FromHexString(pan16);
+            // 2. Append 2-digit PSN (1 byte) to form 8-byte diversification block
+            string psn2 = psn.Length >= 2 ? psn.Substring(psn.Length - 2) : psn.PadLeft(2, '0');
+            string diversificationHex = pan14 + psn2;
+
+            byte[] diversificationData = Convert.FromHexString(diversificationHex);
 
             if (diversificationData.Length != 8)
                 throw new Exception("Diversification data must be exactly 8 bytes.");
 
-            // 3. Derive left half: K1 = 3DES(IMK-AC, PAN16)
+            // 3. Derive left half: K1 = 3DES(IMK-AC, Input)
             var tdes = new TripleDesEngine();
             byte[] k1 = tdes.EncryptBlock(imk, diversificationData);
 
-            // 4. Derive right half: K2 = 3DES(IMK-AC, ~PAN16)
-            byte[] invertedData = new byte[8];
+            // 4. Derive right half: K2 = 3DES(IMK-AC, Input XOR FFFFFFFFFFFFFFFF)
+            byte[] xorData = new byte[8];
             for (int i = 0; i < 8; i++)
             {
-                invertedData[i] = (byte)~diversificationData[i];
+                xorData[i] = (byte)(diversificationData[i] ^ 0xFF);
             }
-            byte[] k2 = tdes.EncryptBlock(imk, invertedData);
+            byte[] k2 = tdes.EncryptBlock(imk, xorData);
 
             // 5. Concatenate K1 and K2 to form 16-byte master key
             byte[] mkac = new byte[16];
             Array.Copy(k1, 0, mkac, 0, 8);
             Array.Copy(k2, 0, mkac, 8, 8);
 
+            // 6. Apply DES odd parity to each byte (EMVCo requirement)
+            ApplyDesOddParity(mkac);
+
             return mkac;
         }
-
         /// <summary>
         /// Derives the ICC Master Key using EMV Option B (PAN block method).
         /// </summary>
@@ -131,6 +136,9 @@ namespace SecretEmv.Core.Emv.MasterKeyDerivation
             Array.Copy(leftHalf, 0, mkac, 0, 8);
             Array.Copy(rightHalf, 0, mkac, 8, 8);
 
+            // 9. Apply DES odd parity (EMVCo requirement)
+            ApplyDesOddParity(mkac);
+
             return mkac;
         }
 
@@ -145,6 +153,31 @@ namespace SecretEmv.Core.Emv.MasterKeyDerivation
                 : pan;
 
             return trimmed;
+        }
+        /// <summary>
+        /// Applies DES odd parity to each byte of the key.
+        /// Sets the least significant bit of each byte to ensure an odd number of 1-bits.
+        /// This is required by the EMVCo specification for derived keys.
+        /// </summary>
+        private static void ApplyDesOddParity(byte[] key)
+        {
+            for (int i = 0; i < key.Length; i++)
+            {
+                byte b = key[i];
+                // Count the number of 1-bits in the upper 7 bits
+                int bitCount = 0;
+                for (int j = 1; j < 8; j++)
+                {
+                    if ((b & (1 << j)) != 0)
+                        bitCount++;
+                }
+
+                // Set LSB to make total count odd
+                if (bitCount % 2 == 0)
+                    key[i] = (byte)(b | 0x01);  // Set LSB to 1
+                else
+                    key[i] = (byte)(b & 0xFE);  // Clear LSB to 0
+            }
         }
     }
 }

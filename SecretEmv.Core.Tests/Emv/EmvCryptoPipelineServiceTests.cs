@@ -431,6 +431,42 @@ namespace SecretEmv.Core.Tests.Emv
             Assert.Equal(5, keys.Distinct().Count());
         }
 
+        [Fact]
+        public void Debug_EMVCo_A31_Step_By_Step()
+        {
+            // Exact values from EMVCo A.3.1
+            var imkAc = HexToBytes("9E15204313F7318ACB79B90BD986AD29");
+            var pan = "5413339000006165";
+            var psn = "00";
+
+            // Step 1: Extract rightmost 14 digits
+            string last14 = pan.Length >= 14 ? pan.Substring(pan.Length - 14) : pan.PadLeft(14, '0');
+            Assert.Equal("13339000006165", last14);
+
+            // Step 2: Combine with PSN to create input
+            string inputHex = last14 + psn;
+            Assert.Equal("13339000006165" + "00", inputHex);
+
+            // Step 3: Convert to bytes
+            byte[] input = HexToBytes(inputHex);
+            var inputHexFormatted = BitConverter.ToString(input).Replace("-", " ");
+            // Should be: 13 33 90 00 00 61 65 00
+            Assert.Equal("13 33 90 00 00 61 65 00", inputHexFormatted);
+
+            // Step 4: Now test the actual derivation
+            var mkAc = _service.DeriveDesIccMasterKeyOptionA(imkAc, pan, psn);
+
+            var actualHex = BitConverter.ToString(mkAc).Replace("-", " ");
+            var expectedHex = "08 DF 34 25 32 20 A7 20 EF F2 C1 34 38 52 E6 3D";
+
+            // Output for debugging
+            System.Diagnostics.Debug.WriteLine($"Input: {inputHexFormatted}");
+            System.Diagnostics.Debug.WriteLine($"Expected: {expectedHex}");
+            System.Diagnostics.Debug.WriteLine($"Actual:   {actualHex}");
+
+            Assert.Equal(expectedHex, actualHex);
+        }
+
         #endregion
 
         #region Helper Methods
@@ -452,5 +488,6 @@ namespace SecretEmv.Core.Tests.Emv
         }
 
         #endregion
+
     }
 }
