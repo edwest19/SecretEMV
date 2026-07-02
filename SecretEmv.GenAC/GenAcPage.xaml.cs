@@ -322,7 +322,7 @@ namespace SecretEmv.GenAC
         /// <summary>
         /// Gets the window that hosts the given element.
         /// </summary>
-        private Microsoft.UI.Xaml.Window GetWindowForElement(UIElement element)
+        private Microsoft.UI.Xaml.Window? GetWindowForElement(UIElement element)
         {
             if (element.XamlRoot != null)
             {
@@ -336,7 +336,7 @@ namespace SecretEmv.GenAC
                     }
                 }
             }
-            return null;
+            return null; // Add explicit return instead of falling through
         }
 
         /// <summary>

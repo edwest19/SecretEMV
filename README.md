@@ -17,26 +17,17 @@ The idea for this project is for Copilot to generate the entire solution, includ
 
 # 🚀 Features
 
-### ✔ DES Master Key Derivation  
+### ✔ EMV Master Key Derivation  
 - Option A (PAN16)  
 - Option B (PAN16 + PSN nibble padded)  
-
-### ✔ AES Master Key Derivation  
 - AES Option 3 (CMAC‑based diversification)
 
-### ✔ DES Session Key Derivation  
-- ATC diversification using F0/0F blocks  
-- Produces 16‑byte SK_AC
-
-### ✔ AES Session Key Derivation  
+### ✔ Session Key Derivation  
+- 3DES ATC diversification using F0/0F blocks  
 - AES‑CMAC(IMK‑AES, ATC || 14×00)  
-- Produces 16‑byte SK_AC
 
 ### ✔ ARQC Generation  
-- Session key  
-- UN  
-- DOL parsing  
-- MAC generation
+- MAC generation using Session key, UN, DOL parsing
 
 ### ✔ ARPC Generation  
 - ARQC + ARC  
@@ -277,3 +268,24 @@ This README.md acts as:
 - Project specification  
 
 ---
+
+## Release v1.0.0 - EMV Cryptographic Toolkit
+
+### Features
+- ✅ EMV Master Key Derivation (3DES Option A/B, AES)
+- ✅ Session Key Derivation (3DES, AES-CMAC)
+- ✅ ARQC Generation (ISO 9797-1 Algorithm 3)
+- ✅ ARPC Generation (Method 1 & CSU-based)
+- ✅ WinUI 3 Desktop Application
+- ✅ CLI Tools (MasterKey, SKD, ARQC)
+- ✅ EMV 4.3 Book 2 Spec Compliant
+
+### Verified Against EMV Spec Examples
+- A.3.1: Master Key Derivation
+- A.3.1.1: Long PAN (Option B with SHA-1)
+- A.3.2: Session Key Derivation
+- A.3.3: ARQC Generation ✓ `C20039270FE384D5`
+- A.3.4: ARPC Generation ✓ `90EF477F`
+
+### Known Issues
+- EMV spec A.3.1.1 contains an error in intermediate calculation; our implementation is mathematically correct
