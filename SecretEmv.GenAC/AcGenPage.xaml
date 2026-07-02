@@ -105,16 +105,9 @@
             <!-- Section 2: Session Key -->
             <Expander Header="Session Key (SK_AC)" IsExpanded="True">
                 <StackPanel Spacing="8">
-                    <StackPanel Orientation="Horizontal" Spacing="16">
-                        <StackPanel Width="120">
-                            <TextBlock Text="ATC (hex)" />
-                            <TextBox x:Name="TxtAtc" />
-                        </StackPanel>
-
-                        <StackPanel Width="160">
-                            <TextBlock Text="UN (hex)" />
-                            <TextBox x:Name="TxtUn" />
-                        </StackPanel>
+                    <StackPanel Width="120">
+                        <TextBlock Text="ATC (hex)" />
+                        <TextBox x:Name="TxtAtc" />
                     </StackPanel>
 
                     <Button Content="Generate Session Key"
