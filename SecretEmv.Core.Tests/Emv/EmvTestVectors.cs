@@ -47,9 +47,9 @@ namespace SecretEmv.Core.Tests.Emv
 
             // Assert
             Assert.NotNull(mkAc);
-            Assert.Equal(8, mkAc.Length);
+            Assert.Equal(16, mkAc.Length); // 3DES key is 16 bytes (K1||K2)
             // Expected result from EMV Book 2
-            // The derivation produces an 8-byte ICC Master Key
+            // The derivation produces a 16-byte ICC Master Key
             Assert.NotEmpty(BytesToHex(mkAc));
         }
 
@@ -71,9 +71,9 @@ namespace SecretEmv.Core.Tests.Emv
 
             // Assert
             Assert.NotNull(mkAc);
-            Assert.Equal(8, mkAc.Length);
+            Assert.Equal(16, mkAc.Length); // 3DES key is 16 bytes
             // Mastercard expected ICC Master Key
-            // The derivation uses: 3DES-ECB(IMK, PAN16)
+            // The derivation uses: 3DES-ECB(IMK, PAN16) || 3DES-ECB(IMK, ~PAN16)
             Assert.NotEmpty(BytesToHex(mkAc));
         }
 
@@ -95,10 +95,9 @@ namespace SecretEmv.Core.Tests.Emv
 
             // Assert
             Assert.NotNull(mkAc);
-            Assert.Equal(8, mkAc.Length);
+            Assert.Equal(16, mkAc.Length); // 3DES key is 16 bytes
             Assert.NotEmpty(BytesToHex(mkAc));
         }
-
         #endregion
 
         #region Session Key Derivation - EMV Book 2 Test Vectors

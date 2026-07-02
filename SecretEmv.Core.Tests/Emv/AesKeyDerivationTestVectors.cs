@@ -126,7 +126,7 @@ namespace SecretEmv.Core.Tests.Emv
             Assert.Equal(16, mkAc.Length);
             
             // Verify not all zeros
-            Assert.True(mkAc.Any(b => b != 0));
+            Assert.Contains(mkAc, b => b != 0); // Verify not all zeros
         }
 
         #endregion
@@ -297,16 +297,14 @@ namespace SecretEmv.Core.Tests.Emv
             // Assert
             Assert.NotNull(skAc);
             Assert.True(skAc.Length >= 16);
-            
-            // Verify not all zeros
-            Assert.True(skAc.Any(b => b != 0));
-        }
 
-        /// <summary>
-        /// AES Session Key Uniqueness Test
-        /// Ensures different ATCs produce different session keys
-        /// </summary>
-        [Fact]
+            Assert.Contains(skAc, b => b != 0); // Verify not all zeros}
+        }
+            /// <summary>
+            /// AES Session Key Uniqueness Test
+            /// Ensures different ATCs produce different session keys
+            /// </summary>
+            [Fact]
         public void AES_SessionKeyDerivation_UniquenessTest()
         {
             // Arrange
@@ -389,7 +387,7 @@ namespace SecretEmv.Core.Tests.Emv
             
             // Different sizes expected
             Assert.True(aesMk.Length >= 16);
-            Assert.Equal(8, desMk.Length);
+            Assert.Equal(16, desMk.Length);
         }
 
         /// <summary>

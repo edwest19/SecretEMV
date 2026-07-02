@@ -45,7 +45,7 @@ namespace SecretEmv.Core.Tests.Emv
 
             // Assert
             Assert.NotNull(iccMasterKey);
-            Assert.Equal(8, iccMasterKey.Length); // Single 3DES block encryption returns 8 bytes
+            Assert.Equal(16, iccMasterKey.Length); // 3DES key is 16 bytes (K1||K2)
         }
 
         [Fact]
@@ -61,9 +61,8 @@ namespace SecretEmv.Core.Tests.Emv
 
             // Assert
             Assert.NotNull(iccMasterKey);
-            Assert.Equal(8, iccMasterKey.Length); // Single 3DES block encryption
+            Assert.Equal(16, iccMasterKey.Length); // 3DES key is 16 bytes
         }
-
         [Fact]
         public void DeriveDesIccMasterKey_NullIssuerKey_ShouldThrowArgumentException()
         {
@@ -315,7 +314,7 @@ namespace SecretEmv.Core.Tests.Emv
             var input = new ArpcInput
             {
                 Arqc = "1234567890ABCDEF", // 8 bytes
-                Arc = "3030000000000000",  // Pad ARC to 8 bytes to avoid IndexOutOfRangeException
+                Arc = "3030",  // Pad ARC to 8 bytes to avoid IndexOutOfRangeException
                 SessionKeyAc = "FEDCBA98765432100123456789ABCDEF"
             };
 
@@ -393,7 +392,7 @@ namespace SecretEmv.Core.Tests.Emv
 
             // Assert
             Assert.NotNull(iccMasterKey);
-            Assert.Equal(8, iccMasterKey.Length); // 3DES block encryption output
+            Assert.Equal(16, iccMasterKey.Length); // 3DES block encryption output
         }
 
         [Theory]

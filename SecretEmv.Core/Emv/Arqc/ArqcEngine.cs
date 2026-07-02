@@ -72,19 +72,19 @@ namespace SecretEmv.Core.Emv.Arqc
         {
             byte[] sessionKey = Convert.FromHexString(sessionKeyHex);
 
-            byte[] macInput = new byte[dolBytes.Length + tagValuesBytes.Length];
-            Buffer.BlockCopy(dolBytes, 0, macInput, 0, dolBytes.Length);
-            Buffer.BlockCopy(tagValuesBytes, 0, macInput, dolBytes.Length, tagValuesBytes.Length);
+            // DOL is only used to validate structure, not included in MAC
+            // MAC input is ONLY the concatenated tag values
+            byte[] macInput = tagValuesBytes;
 
             byte[] iv = new byte[8]; // EMV IV = 0x00...00
 
-            byte[] arqc = _mac.ComputeMac(sessionKey, iv, macInput);
+            var mac = new RetailMacEngine();
+            byte[] arqc = mac.ComputeMac(sessionKey, iv, macInput);
 
             return new ArqcResult
             {
                 Arqc = Convert.ToHexString(arqc)
             };
         }
-
     }
 }
