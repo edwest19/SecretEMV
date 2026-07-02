@@ -3,33 +3,62 @@
 // This file was generated using Microsoft Copilot.
 
 using System;
-using System.Collections.Generic;
-using SecretEmv.Core.Emv.Arqc;
-using SecretEmv.Core.Emv.Dol;
+using SecretEmv.Core.Crypto;
 
 class Program
 {
     static void Main(string[] args)
     {
-        string skacHex = args[0];
-        string unHex = args[1];
-        string atcHex = args[2];
-        string dolHex = args[3];
+        if (args.Length < 2)
+        {
+            Console.WriteLine("Usage: SecretEmv.Arqc <session_key_hex> <transaction_data_hex>");
+            Console.WriteLine();
+            Console.WriteLine("Computes EMV ARQC (Retail MAC) over transaction data using the session key.");
+            Console.WriteLine();
+            Console.WriteLine("Example:");
+            Console.WriteLine("  SecretEmv.Arqc 182025BA4FAB32F5A63A1BA5E6845D4E 000000010000...");
+            return;
+        }
 
-        byte[] skac = Convert.FromHexString(skacHex);
-        byte[] dolBytes = Convert.FromHexString(dolHex);
+        string sessionKeyHex = args[0];
+        string transactionDataHex = args[1];
 
-        var parser = new DolParser();
-        var entries = parser.Parse(dolBytes);
+        try
+        {
+            // Parse inputs
+            byte[] sessionKey = Convert.FromHexString(sessionKeyHex);
+            byte[] transactionData = Convert.FromHexString(transactionDataHex);
 
-        // Tag values will be supplied later; empty map for now.
-        var tagValues = new Dictionary<string, byte[]>();
+            // Debug output
+            Console.WriteLine($"Session Key: {sessionKeyHex}");
+            Console.WriteLine($"Session Key Length: {sessionKey.Length} bytes");
+            Console.WriteLine($"Transaction Data: {transactionDataHex}");
+            Console.WriteLine($"Transaction Data Length: {transactionData.Length} bytes");
+            Console.WriteLine();
 
-        byte[] transactionData = parser.BuildDataBlock(entries, tagValues);
+            // Validate session key length
+            if (sessionKey.Length != 16 && sessionKey.Length != 24)
+            {
+                Console.WriteLine($"ERROR: Session key must be 16 or 24 bytes (got {sessionKey.Length})");
+                return;
+            }
 
-        var arqcEngine = new ArqcEngine();
-        byte[] arqc = arqcEngine.GenerateArqc(skac, atcHex, unHex, transactionData);
+            // Compute ARQC using Retail MAC
+            var macEngine = new RetailMacEngine();
+            byte[] iv = new byte[8]; // EMV uses zero IV
+            byte[] arqc = macEngine.ComputeMac(sessionKey, iv, transactionData);
 
-        Console.WriteLine(Convert.ToHexString(arqc));
+            // Output ARQC
+            Console.WriteLine($"ARQC: {Convert.ToHexString(arqc)}");
+            Console.WriteLine($"Expected (EMV Spec A.3.3): C20039270FE384D5");  // Corrected!
+        }
+        catch (FormatException)
+        {
+            Console.WriteLine("ERROR: Invalid hex string format");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"ERROR: {ex.Message}");
+        }
     }
 }
